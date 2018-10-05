@@ -52,7 +52,7 @@ public class robot {
        // Arm = hwm.get(DcMotor.class, "A");
 
 
-        gyro = hwm.gyroSensor.get("G");
+        gyro = hwm.get(GyroSensor.class, "G");
         mrGyro = (ModernRoboticsI2cGyro) gyro;
 
         //mrGyro.calibrate();

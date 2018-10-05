@@ -2,11 +2,14 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cGyro;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.GyroSensor;
 
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 
+
+@TeleOp(name="Garbage", group = "")
 public class TEST extends LinearOpMode {
 
     public  DcMotor Left;
@@ -54,6 +57,8 @@ public class TEST extends LinearOpMode {
 
         telemetry.addLine("good");
         Thread.sleep(1000);
+
+
 
 
     }

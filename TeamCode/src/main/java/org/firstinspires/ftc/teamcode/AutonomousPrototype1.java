@@ -34,4 +34,4 @@ public class AutonomousPrototype1 extends LinearOpMode {
             }
         }
     }
-}
+

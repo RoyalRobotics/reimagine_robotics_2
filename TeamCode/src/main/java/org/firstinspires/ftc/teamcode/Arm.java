@@ -1,9 +1,12 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -15,13 +18,17 @@ public class Arm extends LinearOpMode {
 
     ElapsedTime runner = new ElapsedTime();
 
+
+
     double linka, linkb, linkc = 19; // cm
     Servo servoB, servoC, servoD;
-    DcMotorEx leftMotor, rightMotor, bevelMotor, motorA;
+    DcMotorEx leftMotor, rightMotor, bevelMotor, motorA, lift;
 
     Double x, y, a, b, c = 0.0;
     Double lastTimeY = 0.0;
     Double lastTimeX = 0.0;
+
+    BNO055IMU imu;
 
     final static int MOTOR_A_POS_0 = 420;
     final static double SERVO_B_POS_0 = 0.633;
@@ -47,8 +54,11 @@ public class Arm extends LinearOpMode {
 
         leftMotor = hardwareMap.get(DcMotorEx.class, "left");
         rightMotor = hardwareMap.get(DcMotorEx.class, "right");
+        leftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+
         bevelMotor = hardwareMap.get(DcMotorEx.class, "bevel");
         motorA = hardwareMap.get(DcMotorEx.class, "arm");
+        lift = hardwareMap.get(DcMotorEx.class, "lift");
 
         servoB.setPosition(SERVO_B_POS_0);
         servoC.setPosition(SERVO_C_POS_0);
@@ -61,50 +71,68 @@ public class Arm extends LinearOpMode {
         motorA.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         motorA.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
+        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
+        parameters.angleUnit = BNO055IMU.AngleUnit.DEGREES;
+        parameters.accelUnit = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
+        parameters.calibrationDataFile = "BNO055IMUCalibration.json"; // see the calibration sample opmode
+        parameters.loggingEnabled = true;
+        parameters.loggingTag = "IMU";
+        parameters.accelerationIntegrationAlgorithm = new JustLoggingAccelerationIntegrator();
+
+        imu = hardwareMap.get(BNO055IMU.class, "imu");
+        imu.initialize(parameters);
+
+        while (!isStopRequested() && !imu.isGyroCalibrated())
+        {
+            sleep(50);
+            idle();
+        }
+
         waitForStart();
 
 
         while(opModeIsActive()){
 
+            rightMotor.setPower(-gamepad1.right_stick_y);
+            leftMotor.setPower(-gamepad1.left_stick_y);
+            lift.setPower(gamepad1.right_trigger-gamepad1.left_trigger);
+
             double phi = servoD.getPosition();
 
 
-            if(gamepad1.left_stick_y != 0 && (lastTimeX - runner.milliseconds()) > 300){
-                x = x -gamepad1.left_stick_y * 0.01;
+            if(gamepad2.left_stick_y != 0 && (lastTimeX - runner.milliseconds()) > 300){
+                x = x -gamepad2.left_stick_y * 0.01;
                 lastTimeX = runner.milliseconds();
             }
 
-            if(gamepad1.left_stick_x != 0 && (lastTimeX - runner.milliseconds()) > 300){
-                x = x -gamepad1.left_stick_x * 0.01;
+            if(gamepad2.left_stick_x != 0 && (lastTimeX - runner.milliseconds()) > 300){
+                x = x -gamepad2.left_stick_x * 0.01;
                 lastTimeX = runner.milliseconds();
             }
 
-            if(gamepad1.right_trigger > 0.1){
-                servoD.setPosition((servoD.getPosition() < 1.0 ? servoD.getPosition() + gamepad1.right_trigger/20 : servoD.getPosition()));
+            if(gamepad2.right_trigger > 0.1){
+                servoD.setPosition((servoD.getPosition() < 1.0 ? servoD.getPosition() + gamepad2.right_trigger/20 : servoD.getPosition()));
             }
 
-            if(gamepad1.left_trigger > 0.1){
-                servoD.setPosition((servoD.getPosition() < 0.0 ? servoD.getPosition() - gamepad1.right_trigger/20 : servoD.getPosition()));
+            if(gamepad2.left_trigger > 0.1){
+                servoD.setPosition((servoD.getPosition() < 0.0 ? servoD.getPosition() - gamepad2.right_trigger/20 : servoD.getPosition()));
             }
 
-            if(gamepad1.right_bumper){
-
-            }
-
-            //LinkedList<Double> values = invKinematics(x,y,phi);
-
-            //a = values.get(0);
-            //b = values.get(1);
-            //c = values.get(2);
 
 
+            LinkedList<Double> values = invKinematics(x,y,phi);
+
+            a = values.get(0);
+            b = values.get(1);
+            c = values.get(2);
+
+            /*
             servoB.setPosition(gamepad1.left_stick_x);
             servoC.setPosition(gamepad1.left_stick_y);
             servoD.setPosition(gamepad1.right_stick_x);
             motorA.setTargetPosition(200);
             //motorA.setTargetPosition((int) (MOTOR_A_POS_0 + 45*MOTOR_A_CONVERSION_FACTOR + 45*gamepad1.right_stick_y*MOTOR_A_CONVERSION_FACTOR));
-
-            //motorA.se
+            */
             telemetry.addData("SERVO B", servoB.getPosition());
             telemetry.addData("SERVO C", servoC.getPosition());
             telemetry.addData("SERVO D", servoD.getPosition());
@@ -113,19 +141,15 @@ public class Arm extends LinearOpMode {
             telemetry.addData("PID COEF", motorA.getPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION));
             telemetry.addData("runmode",motorA.getMode());
             telemetry.addData("setPower",motorA.getPower());
-
-
-
+            telemetry.addData(".getAngularOrientation", imu.getAngularOrientation());
+            telemetry.addData(".getAngularVelocity",imu.getAngularVelocity());
+            telemetry.addData(".getGravity",imu.getGravity());
+            telemetry.addData(".getParameters",imu.getParameters());
+            telemetry.addData(".getVelocity", imu.getVelocity());
             telemetry.update();
         }
 
-
-
-
-
-
-
-    }/*
+    }
     public LinkedList<Double> invKinematics(double x, double y, double phi){
             LinkedList<Double> angles = new LinkedList<Double>(); //initializes list that outputs will be added to
             //joint angles will folow q1, q2, ... pattern
@@ -155,5 +179,5 @@ public class Arm extends LinearOpMode {
             angles.add(q3);
 
             return angles; //angles outputs in radians
-    }*/
+    }
 }

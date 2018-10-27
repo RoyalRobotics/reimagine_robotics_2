@@ -126,12 +126,12 @@ public class Arm extends LinearOpMode {
 
 
 
-           double values[] = invKinematics(x,y,phi);
+       /*    double values[] = invKinematics(x,y,phi);
 
             a = values[0];
             b = values[1];
             c = values[2];
-
+        */
             /*
             servoB.setPosition(gamepad1.left_stick_x);
             servoC.setPosition(gamepad1.left_stick_y);
@@ -156,6 +156,7 @@ public class Arm extends LinearOpMode {
         }
 
     }
+    /*
     public double[] invKinematics(double x, double y, double phi){
             //LinkedList<Double> angles = new LinkedList<>(); //initializes list that outputs will be added to
             //joint angles will folow q1, q2, ... pattern
@@ -169,8 +170,8 @@ public class Arm extends LinearOpMode {
             double Xe = x; //sets x value of the end effector
             double Ye = y; // sets z value of the end effector
 
-            double Xw = Xe - L3*Math.cos(Math.toRadians(phi)); //finds x-z value of the wrist
-            double Yw = Ye - L3*Math.sin(Math.toRadians(phi));
+            double Xw = Xe - L3*Math.cos(phi*2*Math.PI); //finds x-z value of the wrist
+            double Yw = Ye - L3*Math.sin(phi*2*Math.PI);
 
             double alpha = Math.atan2(Yw, Xw);
             double gamma = Math.acos(((Xw * Xw) + (Yw * Yw) + (L1 * L1) - (L2 * L2)) / (2 * L1 * Math.sqrt((Xw * Xw) + (Yw * Yw))));
@@ -180,12 +181,12 @@ public class Arm extends LinearOpMode {
             double q2 = -1*(Math.PI - Math.acos(((L1*L1) + (L2*L2) - (Xw * Xw) - (Yw * Yw))/(2*L1*L2)));
 
             //calculates wrist joint of planar 3dof arm
-            double q3 = phi - q1 - q2;
+            double q3 = phi*360 - q1 - q2;
 
             angles[0] = q1;
             angles[1] = q2;
             angles[2] = q3;
 
             return angles; //angles outputs in radians
-    }
+    }*/
 }

@@ -12,7 +12,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import java.util.LinkedList;
 
-@TeleOp(name="armTest", group = "")
+@TeleOp(name="DriveOp", group = "")
 public class Arm extends LinearOpMode {
 
 
@@ -22,7 +22,8 @@ public class Arm extends LinearOpMode {
 
     double linka, linkb, linkc = 19; // cm
     Servo servoB, servoC, servoD;
-    DcMotorEx leftMotor, rightMotor, bevelMotor, motorA, lift;
+    DcMotor leftMotor, rightMotor, bevelMotor, lift;
+    DcMotorEx motorA;
 
     Double x, y, a, b, c = 0.0;
     Double lastTimeY = 0.0;
@@ -52,20 +53,18 @@ public class Arm extends LinearOpMode {
         servoC = hardwareMap.get(Servo.class, "C");
         servoD = hardwareMap.get(Servo.class, "D");
 
-        leftMotor = hardwareMap.get(DcMotorEx.class, "left");
-        rightMotor = hardwareMap.get(DcMotorEx.class, "right");
+        leftMotor = hardwareMap.get(DcMotor.class, "left");
+        rightMotor = hardwareMap.get(DcMotor.class, "right");
         leftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        bevelMotor = hardwareMap.get(DcMotorEx.class, "bevel");
+        bevelMotor = hardwareMap.get(DcMotor.class, "bevel");
         motorA = hardwareMap.get(DcMotorEx.class, "arm");
-        lift = hardwareMap.get(DcMotorEx.class, "lift");
+        lift = hardwareMap.get(DcMotor.class, "lift");
 
         servoB.setPosition(SERVO_B_POS_0);
         servoC.setPosition(SERVO_C_POS_0);
         servoD.setPosition(SERVO_D_POS_0);
 
-        telemetry.addLine("Ready to go.");
-        telemetry.update();
 
         motorA.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         motorA.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -87,6 +86,13 @@ public class Arm extends LinearOpMode {
             sleep(50);
             idle();
         }
+
+        telemetry.addData("Gyro Status", imu.getCalibrationStatus());
+        telemetry.addData("B Servo",servoB.getPosition());
+        telemetry.addData("C Servo",servoC.getPosition());
+        telemetry.addData("D Servo",servoD.getPosition());
+        telemetry.addLine("Ready to go.");
+        telemetry.update();
 
         waitForStart();
 
@@ -120,11 +126,11 @@ public class Arm extends LinearOpMode {
 
 
 
-            LinkedList<Double> values = invKinematics(x,y,phi);
+           double values[] = invKinematics(x,y,phi);
 
-            a = values.get(0);
-            b = values.get(1);
-            c = values.get(2);
+            a = values[0];
+            b = values[1];
+            c = values[2];
 
             /*
             servoB.setPosition(gamepad1.left_stick_x);
@@ -150,9 +156,11 @@ public class Arm extends LinearOpMode {
         }
 
     }
-    public LinkedList<Double> invKinematics(double x, double y, double phi){
-            LinkedList<Double> angles = new LinkedList<Double>(); //initializes list that outputs will be added to
+    public double[] invKinematics(double x, double y, double phi){
+            //LinkedList<Double> angles = new LinkedList<>(); //initializes list that outputs will be added to
             //joint angles will folow q1, q2, ... pattern
+
+            double angles[] = {0.0,0.0,0.0};
 
             double L1 = linka; //link lengths need to be set correctly
             double L2 = linkb; //units probably should be inches
@@ -174,9 +182,9 @@ public class Arm extends LinearOpMode {
             //calculates wrist joint of planar 3dof arm
             double q3 = phi - q1 - q2;
 
-            angles.add(q1);
-            angles.add(q2);
-            angles.add(q3);
+            angles[0] = q1;
+            angles[1] = q2;
+            angles[2] = q3;
 
             return angles; //angles outputs in radians
     }
